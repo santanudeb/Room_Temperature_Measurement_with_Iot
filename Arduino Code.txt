@@ -1,0 +1,71 @@
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
+uint8_t temprature_sens_read();
+#include <WiFi.h>
+String apiKey = "WL5AE6DJ833RO6PH";                                    //  Enter your own Write API key from ThingSpeak
+const char *ssid =  "santanu";                                    // replace with your wifi ssid and wpa2 key
+const char *pass =  "12345678";
+const char* host = "api.thingspeak.com";
+int sens1 = 15;
+WiFiClient client;
+void setup() 
+{
+    Serial.begin(115200);
+    delay(10);
+    Serial.println("Connecting to ");
+    Serial.println(ssid);
+    WiFi.begin(ssid, pass);
+    while (WiFi.status() != WL_CONNECTED) 
+    {   delay(500);
+     Serial.print(".");
+    }
+    Serial.println("");
+    Serial.println("WiFi connected"); 
+    pinMode(sens1, INPUT);
+}
+void loop() 
+{  
+float temp= 0.0;
+temp = analogRead(sens1);                //changing temperature parameter to celsius
+Serial.print("connecting to... ");
+ Serial.println(host);
+  const int httpPort = 80;
+  if (!client.connect(host, httpPort)) 
+  {
+    Serial.println("connection failed");
+  }
+  else
+  {
+    Serial.println("connected to host ...");
+  }               
+ String url = "https://api.thingspeak.com/update?api_key=WL5AE6DJ833RO6PH&field1=0";
+ url += temp;
+ Serial.print("Requesting URL: ");
+ Serial.println(url);
+  //+ " HTTP/1.1\r\n"     // This will send the request to the serve
+  client.print(String("POST ") + url  + " HTTP/1.1\r\n" +
+                       "Host: " + host + "\r\n" +
+                       "Connection: close\r\n\r\n");              
+  unsigned long timeout = millis();
+  while (client.available() == 0) {
+   if (millis() - timeout > 3000) {
+   Serial.println(">>> Client Timeout !");
+   client.stop();
+   return;
+    }
+  }
+  // Read all the lines of the reply from server and print them to Serial
+  while(client.available()){
+    String line = client.readStringUntil('\r');
+    Serial.print(line);
+  }
+ Serial.println();
+ Serial.println("closing connection");
+}
+
